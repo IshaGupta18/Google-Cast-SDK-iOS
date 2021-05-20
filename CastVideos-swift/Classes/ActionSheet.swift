@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC. All Rights Reserved.
+// Copyright 2021 Google LLC. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -82,34 +82,6 @@ class ActionSheet: NSObject, UIAlertViewDelegate {
         presentationController.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
       }
       parent.present(controller, animated: true)
-    } else {
-      // iOS 7 and below.
-      let alertView = UIAlertView(title: title ?? "",
-                                  message: message ?? "",
-                                  delegate: self,
-                                  cancelButtonTitle: cancelButtonText,
-                                  otherButtonTitles: "")
-      indexedActions = [AnyHashable: Any](minimumCapacity: actions.count) as? [Int: ActionSheetAction]
-      for action: ActionSheetAction in actions {
-        let position = alertView.addButton(withTitle: action.title)
-        indexedActions?[position] = action
-      }
-      alertView.show()
-      // Hold onto this ActionSheet until the UIAlertView is dismissed. This
-      // ensures that the delegate is not released (as UIAlertView usually only
-      // holds a weak reference to us).
-      objc_setAssociatedObject(alertView, "", self, .OBJC_ASSOCIATION_RETAIN)
     }
-  }
-
-  // MARK: - UIAlertViewDelegate
-
-  func alertView(_: UIAlertView, clickedButtonAt buttonIndex: Int) {
-    let action: ActionSheetAction? = indexedActions?[buttonIndex]
-    action?.trigger()
-  }
-
-  func alertViewCancel(_: UIAlertView) {
-    indexedActions = nil
   }
 }

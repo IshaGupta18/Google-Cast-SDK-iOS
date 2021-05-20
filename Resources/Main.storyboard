@@ -30,13 +30,13 @@
                                             </constraints>
                                         </imageView>
                                         <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="1" contentMode="top" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Chromecast: For Bigger Blazes" lineBreakMode="wordWrap" numberOfLines="3" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="AAY-8o-4dv">
-                                            <rect key="frame" x="136" y="0.0" width="411" height="69"/>
+                                            <rect key="frame" x="136" y="0.0" width="225" height="69"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                             <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="2" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Google LLC." lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vZV-hs-ncg">
-                                            <rect key="frame" x="136" y="49" width="444" height="21"/>
+                                            <rect key="frame" x="136" y="49" width="258" height="21"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="21" id="Ieq-8h-ghg"/>
                                             </constraints>
@@ -45,7 +45,7 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <button opaque="NO" tag="4" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rdR-1G-zqM">
-                                            <rect key="frame" x="555" y="27.5" width="25" height="25"/>
+                                            <rect key="frame" x="369" y="27.5" width="25" height="25"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="25" id="D7P-VU-k21"/>
                                                 <constraint firstAttribute="height" constant="25" id="vi5-Yu-dJQ"/>

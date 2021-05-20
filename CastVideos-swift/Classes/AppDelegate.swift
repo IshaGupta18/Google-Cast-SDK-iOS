@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC. All Rights Reserved.
+// Copyright 2021 Google LLC. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,37 +28,37 @@ let appDelegate = (UIApplication.shared.delegate as? AppDelegate)
 class AppDelegate: UIResponder, UIApplicationDelegate {
   // You can add your own app id here that you get by registering with the Google Cast SDK
   // Developer Console https://cast.google.com/publish or use kGCKDefaultMediaReceiverApplicationID
+  // The app has to be registered to get an ID, using a sample ID for this sample app
   let kReceiverAppID = "C0868879"
-  fileprivate var enableSDKLogging = false
+  fileprivate var enableSDKLogging = true
   fileprivate var mediaNotificationsEnabled = false
   fileprivate var firstUserDefaultsSync = false
   fileprivate var useCastContainerViewController = false
+    var isCastControlBarsEnabled: Bool {
+        get {
+          if useCastContainerViewController {
+            let castContainerVC = (window?.rootViewController as? GCKUICastContainerViewController)
+            return castContainerVC!.miniMediaControlsItemEnabled
+          } else {
+            let rootContainerVC = (window?.rootViewController as? RootContainerViewController)
+            return rootContainerVC!.miniMediaControlsViewEnabled
+          }
+        }
+        set(notificationsEnabled) {
+          if useCastContainerViewController {
+            var castContainerVC: GCKUICastContainerViewController?
+            castContainerVC = (window?.rootViewController as? GCKUICastContainerViewController)
+            castContainerVC?.miniMediaControlsItemEnabled = notificationsEnabled
+          } else {
+            var rootContainerVC: RootContainerViewController?
+            rootContainerVC = (window?.rootViewController as? RootContainerViewController)
+            rootContainerVC?.miniMediaControlsViewEnabled = notificationsEnabled
+          }
+        }
+      }
 
   var window: UIWindow?
   var mediaList: MediaListModel!
-  var isCastControlBarsEnabled: Bool {
-    get {
-      if useCastContainerViewController {
-        let castContainerVC = (window?.rootViewController as? GCKUICastContainerViewController)
-        return castContainerVC!.miniMediaControlsItemEnabled
-      } else {
-        let rootContainerVC = (window?.rootViewController as? RootContainerViewController)
-        return rootContainerVC!.miniMediaControlsViewEnabled
-      }
-    }
-    set(notificationsEnabled) {
-      if useCastContainerViewController {
-        var castContainerVC: GCKUICastContainerViewController?
-        castContainerVC = (window?.rootViewController as? GCKUICastContainerViewController)
-        castContainerVC?.miniMediaControlsItemEnabled = notificationsEnabled
-      } else {
-        var rootContainerVC: RootContainerViewController?
-        rootContainerVC = (window?.rootViewController as? RootContainerViewController)
-        rootContainerVC?.miniMediaControlsViewEnabled = notificationsEnabled
-      }
-    }
-  }
-
   func application(_: UIApplication,
                    didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     populateRegistrationDomain()
@@ -70,12 +70,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let options = GCKCastOptions(discoveryCriteria: GCKDiscoveryCriteria(applicationID: kReceiverAppID))
     options.physicalVolumeButtonsWillControlDeviceVolume = true
     
-    /** Following code enables CastConnect */
-     let launchOptions = GCKLaunchOptions()
-     launchOptions.androidReceiverCompatible = true
-     options.launchOptions = launchOptions
-    
     GCKCastContext.setSharedInstanceWith(options)
+    
     GCKCastContext.sharedInstance().useDefaultExpandedMediaControls = true
 
     // Theme the cast button using UIAppearance.
@@ -85,15 +81,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     setupCastLogging()
 
     if useCastContainerViewController {
-      let appStoryboard = UIStoryboard(name: "Main", bundle: nil)
-      guard let navigationController = appStoryboard.instantiateViewController(withIdentifier: "MainNavigation")
-        as? UINavigationController else { return false }
-      let castContainerVC = GCKCastContext.sharedInstance().createCastContainerController(for: navigationController)
-        as GCKUICastContainerViewController
-      castContainerVC.miniMediaControlsItemEnabled = true
-      window = UIWindow(frame: UIScreen.main.bounds)
-      window?.rootViewController = castContainerVC
-      window?.makeKeyAndVisible()
+        let appStoryboard = UIStoryboard(name: "Main", bundle: nil)
+        guard let navigationController = appStoryboard.instantiateViewController(withIdentifier: "MainNavigation")
+          as? UINavigationController else { return false }
+        let castContainerVC = GCKCastContext.sharedInstance().createCastContainerController(for: navigationController)
+          as GCKUICastContainerViewController
+        castContainerVC.miniMediaControlsItemEnabled = true
+        window = UIWindow(frame: UIScreen.main.bounds)
+        window?.rootViewController = castContainerVC
+        window?.makeKeyAndVisible()
+    
     } else {
       let rootContainerVC = (window?.rootViewController as? RootContainerViewController)
       rootContainerVC?.miniMediaControlsViewEnabled = true
@@ -104,7 +101,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                                            object: nil)
     firstUserDefaultsSync = true
     syncWithUserDefaults()
-    UIApplication.shared.statusBarStyle = .lightContent
+    
     GCKCastContext.sharedInstance().sessionManager.add(self)
     GCKCastContext.sharedInstance().imagePicker = self
     return true
@@ -115,14 +112,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                                               name: NSNotification.Name.gckExpandedMediaControlsTriggered,
                                               object: nil)
   }
-
   func setupCastLogging() {
-    let logFilter = GCKLoggerFilter()
-    let classesToLog = ["GCKDeviceScanner", "GCKDeviceProvider", "GCKDiscoveryManager", "GCKCastChannel",
-                        "GCKMediaControlChannel", "GCKUICastButton", "GCKUIMediaController", "NSMutableDictionary"]
-    logFilter.setLoggingLevel(.verbose, forClasses: classesToLog)
-    GCKLogger.sharedInstance().filter = logFilter
-    GCKLogger.sharedInstance().delegate = self
+      let logFilter = GCKLoggerFilter()
+      let classesToLog = ["GCKDeviceScanner", "GCKDeviceProvider", "GCKDiscoveryManager", "GCKCastChannel", "GCKMediaControlChannel", "GCKUICastButton", "GCKUIMediaController", "NSMutableDictionary"]
+      logFilter.setLoggingLevel(.verbose, forClasses: classesToLog)
+      GCKLogger.sharedInstance().filter = logFilter
+//    GCKLogger.sharedInstance().delegate = self
   }
 }
 
@@ -180,21 +175,18 @@ extension AppDelegate {
     }
     firstUserDefaultsSync = false
   }
+    func logMessage(_ message: String,
+                      at _: GCKLoggerLevel,
+                      fromFunction function: String,
+                      location: String) {
+        if enableSDKLogging {
+          // Send SDK's log messages directly to the console.
+          print("\(location): \(function) - \(message)")
+        }
+      }
 }
 
 // MARK: - GCKLoggerDelegate
-
-extension AppDelegate: GCKLoggerDelegate {
-  func logMessage(_ message: String,
-                  at _: GCKLoggerLevel,
-                  fromFunction function: String,
-                  location: String) {
-    if enableSDKLogging {
-      // Send SDK's log messages directly to the console.
-      print("\(location): \(function) - \(message)")
-    }
-  }
-}
 
 // MARK: - GCKSessionManagerListener
 

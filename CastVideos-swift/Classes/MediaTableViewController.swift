@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC. All Rights Reserved.
+// Copyright 2021 Google LLC. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,12 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
   private var queueAdded: Bool = false
   private var castButton: GCKUICastButton!
   private var credentials: String? = nil
-    
+  private var statusBarHidden: Bool = false
+  
+  override var prefersStatusBarHidden: Bool {
+    return statusBarHidden
+  }
+  
   /** The media to be displayed. */
   var mediaList: MediaListModel?
   var rootItem: MediaItem? {
@@ -55,43 +60,29 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
     if rootItem == nil {
       loadMediaList()
     }
-    castButton = GCKUICastButton(frame: CGRect(x: CGFloat(0), y: CGFloat(0),
-                                               width: CGFloat(24), height: CGFloat(24)))
+    
     // Overwrite the UIAppearance theme in the AppDelegate.
-    castButton.tintColor = UIColor.white
-    navigationItem.rightBarButtonItem = UIBarButtonItem(customView: castButton)
+    
     queueButton = UIBarButtonItem(image: UIImage(named: "playlist_white.png"),
                                   style: .plain, target: self, action: #selector(didTapQueueButton))
-    navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Creds", style: .plain,
-                                                       target: self, action: #selector(toggleLaunchCreds))
+    
     tableView.separatorColor = UIColor.clear
     NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange),
                                            name: UIDevice.orientationDidChangeNotification, object: nil)
-    UIDevice.current.beginGeneratingDeviceOrientationNotifications()
     NotificationCenter.default.addObserver(self, selector: #selector(castDeviceDidChange),
-                                           name: NSNotification.Name.gckCastStateDidChange,
-                                           object: GCKCastContext.sharedInstance())
-    setLaunchCreds()
+                                             name: NSNotification.Name.gckCastStateDidChange,
+                                             object: GCKCastContext.sharedInstance())
+    UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+    
   }
-
-  @objc func toggleLaunchCreds(_: Any){
-    if (credentials == nil) {
-        credentials = "{\"userId\":\"id123\"}"
-    } else {
-        credentials = nil
+    @objc func castDeviceDidChange(_: Notification) {
+      if GCKCastContext.sharedInstance().castState != .noDevicesAvailable {
+        // You can present the instructions on how to use Google Cast on
+        // the first time the user uses you app
+        GCKCastContext.sharedInstance().presentCastInstructionsViewControllerOnce(with: castButton)
+      }
     }
-    Toast.displayMessage("Launch Credentials: "+(credentials ?? "Null"), for: 3, in: appDelegate?.window)
-    print("Credentials set: "+(credentials ?? "Null"))
-    setLaunchCreds()
-  }
 
-  @objc func castDeviceDidChange(_: Notification) {
-    if GCKCastContext.sharedInstance().castState != .noDevicesAvailable {
-      // You can present the instructions on how to use Google Cast on
-      // the first time the user uses you app
-      GCKCastContext.sharedInstance().presentCastInstructionsViewControllerOnce(with: castButton)
-    }
-  }
 
   @objc func deviceOrientationDidChange(_: Notification) {
     tableView.reloadData()
@@ -122,7 +113,6 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
     navigationController?.navigationBar.isTranslucent = false
     navigationController?.navigationBar.setBackgroundImage(nil, for: .default)
     navigationController?.navigationBar.shadowImage = nil
-    UIApplication.shared.setStatusBarHidden(false, with: .fade)
     navigationController?.interactivePopGestureRecognizer?.isEnabled = true
 
     if rootItem?.parent == nil {
@@ -219,8 +209,6 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
         actionSheet = ActionSheet(title: "Play Item", message: "Select an action", cancelButtonText: "Cancel")
         actionSheet.addAction(withTitle: "Play Now", target: self,
                               selector: #selector(playSelectedItemRemotely))
-        actionSheet.addAction(withTitle: "Add to Queue", target: self,
-                              selector: #selector(enqueueSelectedItemRemotely))
       }
       actionSheet.present(in: self, sourceView: tableViewCell)
     }
@@ -249,11 +237,8 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
   }
 
   @objc func enqueueSelectedItemRemotely() {
-    loadSelectedItem(byAppending: true)
-    // selectedItem = [self getSelectedItem];
-    let message = "Added \"\(selectedItem.mediaInfo?.metadata?.string(forKey: kGCKMetadataKeyTitle) ?? "")\" to queue."
-    Toast.displayMessage(message, for: 3, in: appDelegate?.window)
-    setQueueButtonVisible(true)
+    loadSelectedItem(byAppending: false)
+    setQueueButtonVisible(false)
   }
 
   /**
@@ -280,7 +265,6 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
 
         let mediaLoadRequestDataBuilder = GCKMediaLoadRequestDataBuilder()
         mediaLoadRequestDataBuilder.queueData = queueDataBuilder.build()
-        mediaLoadRequestDataBuilder.credentials = credentials
 
         let request = remoteMediaClient.loadMedia(with: mediaLoadRequestDataBuilder.build())
         request.delegate = self
@@ -304,11 +288,9 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
 
   func mediaListModel(_: MediaListModel, didFailToLoadWithError _: Error?) {
     let errorMessage: String = "Unable to load the media list from\n\(mediaListURL.absoluteString)."
-    let alert = UIAlertView(title: NSLocalizedString("Cast Error", comment: ""),
-                            message: NSLocalizedString(errorMessage, comment: ""),
-                            delegate: nil, cancelButtonTitle: NSLocalizedString("OK", comment: ""),
-                            otherButtonTitles: "")
-    alert.show()
+    let alert = UIAlertController(title: "Cast Error", message: errorMessage, preferredStyle: .alert)
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    self.present(alert, animated: true, completion: nil)
   }
 
   @objc func loadMediaList() {
@@ -372,9 +354,9 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
   }
 
   func showAlert(withTitle title: String, message: String) {
-    let alert = UIAlertView(title: title, message: message,
-                            delegate: nil, cancelButtonTitle: "OK", otherButtonTitles: "")
-    alert.show()
+    let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    self.present(alert, animated: true, completion: nil)
   }
 
   // MARK: - GCKRequestDelegate
@@ -387,8 +369,4 @@ class MediaTableViewController: UITableViewController, GCKSessionManagerListener
     print("request \(Int(request.requestID)) failed with error \(error)")
   }
   
-  func setLaunchCreds() {
-    GCKCastContext.sharedInstance()
-        .setLaunch(GCKCredentialsData(credentials: credentials))
-  }
 }

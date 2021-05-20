@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC. All Rights Reserved.
+// Copyright 2021 Google LLC. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ class MediaQueueViewController: UIViewController, UITableViewDataSource, UITable
   private var mediaClient: GCKRemoteMediaClient!
   private var mediaController: GCKUIMediaController!
   private var queueRequest: GCKRequest!
-
+  
   override func viewDidLoad() {
     print("_tableView is \(_tableView.description)")
     _tableView.dataSource = self
@@ -85,12 +85,9 @@ class MediaQueueViewController: UIViewController, UITableViewDataSource, UITable
   }
 
   func showErrorMessage(_ message: String) {
-    let alert = UIAlertView(title: NSLocalizedString("Error", comment: ""),
-                            message: message,
-                            delegate: nil,
-                            cancelButtonTitle: NSLocalizedString("OK", comment: ""),
-                            otherButtonTitles: "")
-    alert.show()
+    let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    self.present(alert, animated: true, completion: nil)
   }
 
   @objc func handleLongPress(_ gestureRecognizer: UILongPressGestureRecognizer) {
